@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="19529" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="20037" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="19529"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="20037"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -122,7 +122,7 @@
                                 </clipView>
                                 <edgeInsets key="contentInsets" left="0.0" right="0.0" top="0.0" bottom="0.0"/>
                                 <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="YES" id="BF1-4Z-QQE">
-                                    <rect key="frame" x="0.0" y="585" width="300" height="15"/>
+                                    <rect key="frame" x="0.0" y="482" width="314" height="16"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                 </scroller>
                                 <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="NO" id="2Kv-gs-1ge">
@@ -140,9 +140,9 @@
                                 <rect key="frame" x="497" y="0.0" width="5" height="600"/>
                             </box>
                             <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="YrW-3X-cWk">
-                                <rect key="frame" x="500" y="0.0" width="314" height="103"/>
+                                <rect key="frame" x="500" y="0.0" width="314" height="150"/>
                                 <view key="contentView" id="mmf-Or-PS6">
-                                    <rect key="frame" x="0.0" y="0.0" width="314" height="103"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="314" height="150"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <view id="DbD-Gb-o8t" customClass="Input" customModule="APIExample" customModuleProvider="target">
@@ -159,15 +159,42 @@
                                                 <action selector="onJoinPressed:" target="Gwp-vd-c2J" id="VLP-qy-Sc5"/>
                                             </connections>
                                         </button>
+                                        <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="XJg-pz-0VA">
+                                            <rect key="frame" x="26" y="103" width="135" height="32"/>
+                                            <buttonCell key="cell" type="push" title="enable audio" bezelStyle="rounded" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="R9d-Vl-6lE">
+                                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                <font key="font" metaFont="system"/>
+                                            </buttonCell>
+                                            <connections>
+                                                <action selector="enableAudioButtonClick:" target="Gwp-vd-c2J" id="rSy-KK-2km"/>
+                                            </connections>
+                                        </button>
+                                        <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="H7y-0u-9w6">
+                                            <rect key="frame" x="159" y="103" width="135" height="32"/>
+                                            <buttonCell key="cell" type="push" title="enable video" bezelStyle="rounded" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="37X-s2-LFK">
+                                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                <font key="font" metaFont="system"/>
+                                            </buttonCell>
+                                            <connections>
+                                                <action selector="enableVideoButtonClick:" target="Gwp-vd-c2J" id="WR0-Dx-64K"/>
+                                            </connections>
+                                        </button>
                                     </subviews>
                                     <constraints>
+                                        <constraint firstItem="H7y-0u-9w6" firstAttribute="width" secondItem="XJg-pz-0VA" secondAttribute="width" id="6Dd-It-66z"/>
+                                        <constraint firstItem="H7y-0u-9w6" firstAttribute="leading" secondItem="XJg-pz-0VA" secondAttribute="trailing" constant="12" symbolic="YES" id="8l7-Pp-YFy"/>
+                                        <constraint firstItem="H7y-0u-9w6" firstAttribute="height" secondItem="XJg-pz-0VA" secondAttribute="height" id="RVg-ca-Elh"/>
+                                        <constraint firstItem="H7y-0u-9w6" firstAttribute="centerY" secondItem="XJg-pz-0VA" secondAttribute="centerY" id="Srf-0P-uel"/>
+                                        <constraint firstAttribute="trailing" secondItem="H7y-0u-9w6" secondAttribute="trailing" constant="27" id="ZXS-bx-kXA"/>
+                                        <constraint firstItem="XJg-pz-0VA" firstAttribute="top" secondItem="mmf-Or-PS6" secondAttribute="top" constant="20" id="dRz-Rg-Zzk"/>
                                         <constraint firstItem="m5Y-g9-nbd" firstAttribute="leading" secondItem="mmf-Or-PS6" secondAttribute="leading" constant="33" id="fIM-fc-rNW"/>
                                         <constraint firstItem="m5Y-g9-nbd" firstAttribute="top" secondItem="DbD-Gb-o8t" secondAttribute="bottom" constant="9" id="jDj-xD-doS"/>
                                         <constraint firstItem="m5Y-g9-nbd" firstAttribute="centerX" secondItem="DbD-Gb-o8t" secondAttribute="centerX" id="mOM-Wj-kNO"/>
+                                        <constraint firstItem="XJg-pz-0VA" firstAttribute="leading" secondItem="mmf-Or-PS6" secondAttribute="leading" constant="33" id="ubv-Je-pyX"/>
                                     </constraints>
                                 </view>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="103" id="TfN-uu-Y6V"/>
+                                    <constraint firstAttribute="height" constant="150" id="TfN-uu-Y6V"/>
                                 </constraints>
                                 <color key="fillColor" name="windowBackgroundColor" catalog="System" colorSpace="catalog"/>
                             </box>
@@ -190,12 +217,17 @@
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="boxView" destination="YrW-3X-cWk" id="Mun-Ji-5fO"/>
                         <outlet property="channelField" destination="DbD-Gb-o8t" id="lN2-Jm-z1B"/>
+                        <outlet property="constW" destination="NaG-eN-c1C" id="oVg-4S-1ZF"/>
                         <outlet property="container" destination="1IN-H9-sOa" id="0rO-aR-kmu"/>
+                        <outlet property="enableAudioButton" destination="XJg-pz-0VA" id="HZA-Mq-GbQ"/>
+                        <outlet property="enableVideoButton" destination="H7y-0u-9w6" id="N5g-Hx-yM4"/>
                         <outlet property="halfScreenShareButton" destination="9RF-XQ-1Kc" id="B0E-OZ-f3Y"/>
                         <outlet property="joinChannelButton" destination="m5Y-g9-nbd" id="IWF-DR-p6U"/>
                         <outlet property="screenShareButton" destination="r9I-9E-LeA" id="LCe-S0-Dqk"/>
                         <outlet property="screenThumbnailButton" destination="M4d-F9-fzD" id="COa-4u-Xjs"/>
+                        <outlet property="scrollView" destination="0gK-Gx-e9A" id="RUS-mE-hZl"/>
                         <outlet property="selectDisplayHintPicker" destination="Sdd-lG-w3y" id="rSC-bE-45e"/>
                         <outlet property="selectFpsPicker" destination="UdM-Ys-Izc" id="TMO-Lz-aO4"/>
                         <outlet property="selectLayoutPicker" destination="DnN-dH-8wx" id="WtR-QX-e1M"/>

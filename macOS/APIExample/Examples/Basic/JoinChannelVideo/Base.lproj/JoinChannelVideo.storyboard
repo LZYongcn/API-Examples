@@ -124,8 +124,11 @@
                     </view>
                     <connections>
                         <outlet property="Container" destination="r7G-ng-73B" id="YGH-31-sQ1"/>
+                        <outlet property="botBox" destination="BP9-4w-AfJ" id="J2n-1U-W2v"/>
                         <outlet property="channelField" destination="cOW-S1-5WE" id="jDn-mo-xGn"/>
+                        <outlet property="constW" destination="eOy-e4-rYe" id="MTt-xB-gYW"/>
                         <outlet property="joinChannelButton" destination="Wck-kx-dah" id="7Zo-gi-hFo"/>
+                        <outlet property="rightScrollView" destination="IyR-nw-B0m" id="kjI-dO-mXh"/>
                         <outlet property="selectCameraPicker" destination="Wvv-X8-f7U" id="pNv-K1-sH1"/>
                         <outlet property="selectFpsPicker" destination="jHK-UU-E1C" id="agM-jd-ePJ"/>
                         <outlet property="selectLayoutPicker" destination="SX5-NX-wxs" id="Xf2-oi-ivY"/>

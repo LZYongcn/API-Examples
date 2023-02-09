@@ -12,9 +12,21 @@ import AGEVideoLayout
 class ScreenShare: BaseViewController {
     var videos: [VideoView] = []
     
+    @IBOutlet weak var constW: NSLayoutConstraint!
     @IBOutlet weak var container: AGEVideoContainer!
     
+    @IBOutlet weak var boxView: NSBox!
+
+    @IBOutlet weak var scrollView: NSScrollView!
     var agoraKit: AgoraRtcEngineKit!
+    
+    var screenShareUID: UInt = UInt(Int.random(in: 10000...99999))
+    var mainViewIdx: Int = 0
+    var enableVideo = false
+    var enableAudio = false
+    var enableFullScreen = true
+    
+    private var screenFrame: CGRect = .zero
 
     /**
      --- Layout Picker ---
@@ -30,16 +42,22 @@ class ScreenShare: BaseViewController {
         }
     }
     func initSelectLayoutPicker() {
-        layoutVideos(2)
+        createVideos(9)
         selectLayoutPicker.label.stringValue = "Layout".localized
         selectLayoutPicker.picker.addItems(withTitles: layouts.map { $0.label })
-        selectLayoutPicker.onSelectChanged {
+        selectLayoutPicker.onSelectChanged { [unowned self] in
             if self.isJoined {
                 return
             }
             guard let layout = self.selectedLayout else { return }
-            self.layoutVideos(layout.value)
+            self.createVideos(layout.value)
+            self.layoutVideos(mainIdx: self.mainViewIdx)
         }
+    }
+    
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        layoutVideos(mainIdx: mainViewIdx)
     }
     
     /**
@@ -240,19 +258,30 @@ class ScreenShare: BaseViewController {
     
     @IBAction func onScreenShare(_ sender: NSButton) {
         if !isScreenSharing {
-            guard let resolution = self.selectedResolution,
-                  let fps = self.selectedFps,
-                  let screen = selectedScreen else {
+            guard let screen = selectedScreen else {
                 return
             }
             let params = AgoraScreenCaptureParameters()
-            params.frameRate = fps
-            params.dimensions = resolution.size()
+            params.frameRate = 60
+            params.dimensions = CGSize.init(width: 4096, height: 4096)
+            params.bitrate = 12 * 1000
             // 增加勾边功能
-            params.highLightWidth = 5
-            params.highLightColor = .green
-            params.highLighted = true
+//            params.highLightWidth = 5
+//            params.highLightColor = .green
+//            params.highLighted = false
             let result = agoraKit.startScreenCapture(byDisplayId: UInt32(screen.id), regionRect: .zero, captureParams: params)
+            
+            let connection = AgoraRtcConnection.init()
+            connection.channelId = channelField.stringValue
+            connection.localUid = screenShareUID
+            
+            let option = AgoraRtcChannelMediaOptions.init()
+            option.autoSubscribeVideo = false
+            option.autoSubscribeAudio = false
+            option.publishScreenTrack = true
+            option.clientRoleType = .broadcaster
+            agoraKit.joinChannelEx(byToken: KeyCenter.Token, connection: connection, delegate: nil, mediaOptions: option)
+            
             if result != 0 {
                 // Usually happens with invalid parameters
                 // Error code description can be found at:
@@ -261,22 +290,18 @@ class ScreenShare: BaseViewController {
                 self.showAlert(title: "Error", message: "startScreenCapture call failed: \(result), please check your params")
             } else {
                 isScreenSharing = true
-                let mediaOptions = AgoraRtcChannelMediaOptions()
-                mediaOptions.publishCameraTrack = false
-                mediaOptions.publishScreenTrack = true
-                agoraKit.updateChannel(with: mediaOptions)
-                agoraKit.startPreview()
-                setupLocalPreview(isScreenSharing: true)
+//                agoraKit.stopPreview()
             }
         } else {
             agoraKit.stopScreenCapture()
+            
+            let connection = AgoraRtcConnection.init()
+            connection.channelId = channelField.stringValue
+            connection.localUid = screenShareUID
+            agoraKit.leaveChannelEx(connection)
             isScreenSharing = false
-            let mediaOptions = AgoraRtcChannelMediaOptions()
-            mediaOptions.publishCameraTrack = true
-            mediaOptions.publishScreenTrack = false
-            agoraKit.updateChannel(with: mediaOptions)
-            agoraKit.startPreview()
-            setupLocalPreview(isScreenSharing: false)
+            
+            initScreenShareButton()
         }
     }
 
@@ -391,6 +416,29 @@ class ScreenShare: BaseViewController {
         joinChannelButton.title = isJoined ? "Leave Channel".localized : "Join Channel".localized
     }
     
+    @IBOutlet weak var enableVideoButton: NSButton!
+    @IBAction func enableVideoButtonClick(_ sender: NSButton) {
+        enableVideo.toggle()
+        enableVideoButton.title = enableVideo ? "disable video" : "enable video"
+        
+        let opt = AgoraRtcChannelMediaOptions.init()
+        opt.publishCameraTrack = enableVideo
+        agoraKit.updateChannel(with: opt)
+        agoraKit.enableLocalVideo(enableVideo)
+    }
+    
+    @IBOutlet weak var enableAudioButton: NSButton!
+    @IBAction func enableAudioButtonClick(_ sender: NSButton) {
+        enableAudio.toggle()
+        enableAudioButton.title = enableAudio ? "disable audio" : "enable audio"
+        
+        let opt = AgoraRtcChannelMediaOptions.init()
+        opt.publishMicrophoneTrack = enableAudio
+        agoraKit.updateChannel(with: opt)
+        agoraKit.enableLocalAudio(enableAudio)
+    }
+    
+    
     // indicate if current instance has joined channel
     var isJoined: Bool = false {
         didSet {
@@ -421,9 +469,6 @@ class ScreenShare: BaseViewController {
         config.appId = KeyCenter.AppId
         config.areaCode = GlobalSettings.shared.area
         agoraKit = AgoraRtcEngineKit.sharedEngine(with: config, delegate: self)
-        // Configuring Privatization Parameters
-        Util.configPrivatization(agoraKit: agoraKit)
-        agoraKit.enableVideo()
         
         initSelectResolutionPicker()
         initSelectFpsPicker()
@@ -436,6 +481,52 @@ class ScreenShare: BaseViewController {
         initHalfScreenShareButton()
         initChannelField()
         initJoinChannelButton()
+        
+        self.screenFrame = self.parent?.view.window!.frame ?? .zero
+        let rootPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!.replacingOccurrences(of: "Documents", with: "Logs")
+        if !FileManager.default.fileExists(atPath: rootPath, isDirectory: nil) {
+            try? FileManager.default.createDirectory(atPath: rootPath, withIntermediateDirectories: true, attributes: nil)
+        }
+        
+        print("logfile:", rootPath)
+        
+        let filePath = "\(rootPath)/agorasdk"
+        
+//        agoraKit.setParameters("{\"engine.video.enable_hw_encoder\":\"true\"}")
+//        agoraKit.setParameters("{\"engine.video.codec_type\":\"3\"}")
+//        agoraKit.setParameters("{\"engine.video.enable_hw_decoder\":\"true\"}")
+        
+        agoraKit.setParameters("{\"rtc.video.degradation_preference\": 100}")
+        agoraKit.setParameters("{\"rtc.paced_sender_enabled\": 0}")
+        
+        agoraKit.setParameters("{\"che.video.vpr.enable\": true}")
+        agoraKit.setParameters("{\"che.video.vpr.init_size\"}: 3")
+        agoraKit.setParameters("{\"che.video.vpr.max_size\"}: 5")
+        agoraKit.setParameters("{\"che.video.vpr.method\": 1}")
+        
+        
+//        agoraKit.setParameters("{\"che.video.enableLowBitRateStream\": 0}")
+//        agoraKit.setParameters("{\"rtc.dual_stream_mode\": false}")
+        
+        agoraKit.setParameters("{\"che.video.minQP\": 20}")
+        agoraKit.setParameters("{\"rtc.video.apas_aa_harq_enable\": false}")
+        
+        
+        agoraKit.setParameters("{\"rtc.video.broadcaster_playout_delay_min\": 50}")
+        agoraKit.setParameters("{\"rtc.video.playout_delay_min\": 50}")
+        
+        agoraKit.enableVideo()
+        
+        agoraKit.setLogFile(filePath)
+        agoraKit.setLogFileSize(10 * 1024)
+        agoraKit.setLogFilter(AgoraLogFilter.error.rawValue)
+        agoraKit.setLogLevel(AgoraLogLevel.error)
+        
+        enableVideoButton.title = enableVideo ? "disable video" : "enable video"
+        enableAudioButton.title = enableAudio ? "disable audio" : "enable audio"
+        
+        agoraKit.enableLocalAudio(enableAudio)
+        agoraKit.enableLocalVideo(enableVideo)
     }
     
     override func viewWillBeRemovedFromSplitView() {
@@ -444,6 +535,17 @@ class ScreenShare: BaseViewController {
                 LogUtils.log(message: "Left channel", level: .info)
             }
         }
+        
+        if isScreenSharing {
+            let connection = AgoraRtcConnection.init()
+            connection.channelId = channelField.stringValue
+            connection.localUid = screenShareUID
+            agoraKit.leaveChannelEx(connection)
+            isScreenSharing = false
+            
+            initScreenShareButton()
+        }
+        
         AgoraRtcEngineKit.destroy()
     }
     
@@ -486,19 +588,19 @@ class ScreenShare: BaseViewController {
             // the token has to match the ones used for channel join
             isProcessing = true
             let option = AgoraRtcChannelMediaOptions()
-            option.publishCameraTrack = true
+            option.publishCameraTrack = enableVideo
             option.clientRoleType = .broadcaster
-            NetworkManager.shared.generateToken(channelName: channel, success: { token in
-                let result = self.agoraKit.joinChannel(byToken: token, channelId: channel, uid: 0, mediaOptions: option)
-                if result != 0 {
-                    self.isProcessing = false
-                    // Usually happens with invalid parameters
-                    // Error code description can be found at:
-                    // en: https://api-ref.agora.io/en/voice-sdk/macos/3.x/Constants/AgoraErrorCode.html#content
-                    // cn: https://docs.agora.io/cn/Voice/API%20Reference/oc/Constants/AgoraErrorCode.html
-                    self.showAlert(title: "Error", message: "joinChannel call failed: \(result), please check your params")
-                }
-            })
+            option.autoSubscribeVideo = false
+            option.autoSubscribeAudio = false
+            let result = agoraKit.joinChannel(byToken: KeyCenter.Token, channelId: channel, uid: 0, mediaOptions: option)
+            if result != 0 {
+                isProcessing = false
+                // Usually happens with invalid parameters
+                // Error code description can be found at:
+                // en: https://docs.agora.io/en/Voice/API%20Reference/oc/Constants/AgoraErrorCode.html
+                // cn: https://docs.agora.io/cn/Voice/API%20Reference/oc/Constants/AgoraErrorCode.html
+                self.showAlert(title: "Error", message: "joinChannel call failed: \(result), please check your params")
+            }
         } else {
             isProcessing = true
             agoraKit.leaveChannel { [unowned self] (stats:AgoraChannelStats) in
@@ -508,8 +610,18 @@ class ScreenShare: BaseViewController {
                 self.isJoined = false
                 self.videos.forEach {
                     $0.uid = nil
-                    $0.statsLabel.stringValue = ""
+                    $0.statsInfo = nil
                 }
+            }
+            
+            if isScreenSharing {
+                let connection = AgoraRtcConnection.init()
+                connection.channelId = channelField.stringValue
+                connection.localUid = screenShareUID
+                agoraKit.leaveChannelEx(connection)
+                isScreenSharing = false
+                
+                initScreenShareButton()
             }
         }
     }
@@ -530,10 +642,20 @@ class ScreenShare: BaseViewController {
         agoraKit.startPreview()
     }
     
-    func layoutVideos(_ count: Int) {
+    func createVideos(_ count: Int) {
         videos = []
         for i in 0...count - 1 {
             let view = VideoView.createFromNib()!
+            
+            view.wantsLayer = true
+            view.layer?.masksToBounds = true
+            view.layer?.cornerRadius = 6
+            view.layer?.backgroundColor = NSColor.init(red: 0, green: 0, blue: 0, alpha: 0.05).cgColor
+            
+            let gesture = NSClickGestureRecognizer.init(target: self, action: #selector(handleTap(gesture:)))
+            gesture.numberOfClicksRequired = 2
+            view.addGestureRecognizer(gesture)
+            
             if(i == 0) {
                 view.placeholder.stringValue = "Local"
             } else {
@@ -541,8 +663,41 @@ class ScreenShare: BaseViewController {
             }
             videos.append(view)
         }
-        // layout render view
-        container.layoutStream(views: videos)
+    }
+    
+    @objc
+    func handleTap(gesture:NSGestureRecognizer) {
+        let videoView = gesture.view as! VideoView
+        let idx = videos.firstIndex(of: videoView)!
+        
+        if idx == mainViewIdx {
+            scrollView.isHidden = enableFullScreen
+            boxView.isHidden = enableFullScreen
+            constW.constant = enableFullScreen  ? 0 : 314
+            enableFullScreen = !enableFullScreen
+
+            NotificationCenter.default.post(name: NSNotification.Name("ENABLEFULLSCREEN"), object: nil, userInfo: ["enable":enableFullScreen])
+            print("current---%@", Thread.current)
+            
+            self.parent?.view.window!.toggleFullScreen(self)//全屏切换
+        } else {
+            mainViewIdx = idx
+            self.layoutVideos(mainIdx: mainViewIdx)
+        }
+    }
+    
+    func layoutVideos(mainIdx: Int) {
+        var index = mainIdx
+        if index >= videos.count {
+            index = videos.count - 1
+        }
+        
+        let main = videos[index]
+        var list = videos
+        list.remove(at: index)
+        
+        container.layoutStream(main: main, list: list)
+//        container.layoutStream(views: videos)
     }
 }
 
@@ -590,13 +745,24 @@ extension ScreenShare: AgoraRtcEngineDelegate {
     func rtcEngine(_ engine: AgoraRtcEngineKit, didJoinedOfUid uid: UInt, elapsed: Int) {
         LogUtils.log(message: "remote user join: \(uid) \(elapsed)ms", level: .info)
         
+//        if uid == screenShareUID {
+//            return
+//        }
+        
+//        if uid != 754264 {
+//            return
+//        }
+        
+        agoraKit.muteRemoteVideoStream(uid, mute: false)
+        agoraKit.muteRemoteAudioStream(uid, mute: false)
+        
         // find a VideoView w/o uid assigned
         if let remoteVideo = videos.first(where: { $0.uid == nil }) {
             let videoCanvas = AgoraRtcVideoCanvas()
             videoCanvas.uid = uid
             // the view to be binded
             videoCanvas.view = remoteVideo.videocanvas
-            videoCanvas.renderMode = .hidden
+            videoCanvas.renderMode = .fit
             agoraKit.setupRemoteVideo(videoCanvas)
             remoteVideo.uid = uid
         } else {
@@ -627,4 +793,13 @@ extension ScreenShare: AgoraRtcEngineDelegate {
         }
     }
     
+    func rtcEngine(_ engine: AgoraRtcEngineKit, remoteVideoStats stats: AgoraRtcRemoteVideoStats) {
+        if let remoteVideo = videos.first(where: { $0.uid == stats.uid }) {
+            remoteVideo.statsInfo = StatisticsInfo.init(type: .remote(.init(videoStats: stats, audioStats: nil, audioVolume: nil)))
+        }
+    }
+    
+    func rtcEngine(_ engine: AgoraRtcEngineKit, localVideoStats stats: AgoraRtcLocalVideoStats, sourceType: AgoraVideoSourceType) {
+        
+    }
 }

@@ -37,6 +37,7 @@ class VideoView: NSView, NibLoadable {
     
     var uid:UInt? {
         didSet {
+            infolabel.isHidden = uid == nil
             infolabel.stringValue = uid == nil ? "" : "\(uid!)"
         }
     }
@@ -57,7 +58,9 @@ class VideoView: NSView, NibLoadable {
     var statsInfo:StatisticsInfo? {
         didSet{
             guard let stats = statsInfo else {return}
-            statsLabel.stringValue = stats.description(audioOnly: audioOnly)
+            let info = stats.description(audioOnly: audioOnly)
+            statsLabel.isHidden = info.count == 0
+            statsLabel.stringValue = info
         }
     }
     var type:StreamType?

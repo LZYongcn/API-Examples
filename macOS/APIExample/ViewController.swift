@@ -20,6 +20,9 @@ class MenuController: NSViewController {
     let settings = MenuItem(name: "Global settings".localized, identifier: "menuCell", controller: "Settings", storyboard: "Settings")
     
     var menus:[MenuItem] = [
+        MenuItem(name: "screen", identifier: "headerCell"),
+        MenuItem(name: "Screen Share".localized, identifier: "menuCell", controller: "ScreenShare", storyboard: "ScreenShare"),
+        
         MenuItem(name: "Basic", identifier: "headerCell"),
         MenuItem(name: "Join a channel (Token)".localized, identifier: "menuCell", controller: "JoinChannelVideoToken", storyboard: "JoinChannelVideoToken"),
         MenuItem(name: "Join a channel (Video)".localized, identifier: "menuCell", controller: "JoinChannelVideo", storyboard: "JoinChannelVideo"),
@@ -36,7 +39,6 @@ class MenuController: NSViewController {
         MenuItem(name: "Raw Audio Data".localized, identifier: "menuCell", controller: "RawAudioData", storyboard: "RawAudioData"),
         MenuItem(name: "Join Multiple Channels".localized, identifier: "menuCell", controller: "JoinMultipleChannel", storyboard: "JoinMultiChannel"),
         MenuItem(name: "Stream Encryption".localized, identifier: "menuCell", controller: "StreamEncryption", storyboard: "StreamEncryption"),
-        MenuItem(name: "Screen Share".localized, identifier: "menuCell", controller: "ScreenShare", storyboard: "ScreenShare"),
         MenuItem(name: "Media Channel Relay".localized, identifier: "menuCell", controller: "ChannelMediaRelay", storyboard: "ChannelMediaRelay"),
         MenuItem(name: "Audio Mixing".localized, identifier: "menuCell", controller: "AudioMixing", storyboard: "AudioMixing"),
         MenuItem(name: "Voice Changer".localized, identifier: "menuCell", controller: "VoiceChanger", storyboard: "VoiceChanger"),
@@ -52,8 +54,26 @@ class MenuController: NSViewController {
     
     @IBOutlet weak var tableView:NSTableView!
     
+    private var menuItem: NSSplitViewItem?
+    private var splitVC: NSSplitViewController?
+    
+    deinit {
+        print("==")
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        NotificationCenter.default.addObserver(self, selector: #selector(reloadMenu), name: NSNotification.Name(rawValue:"ENABLEFULLSCREEN"), object: nil)
+    }
+    
+    override func viewDidDisappear() {
+        super.viewDidDisappear()
+    }
+    
+    @objc func reloadMenu(_ noti: Notification) {
+//        print("receive---%@", Thread.current)
+        guard let obj = noti.userInfo, let value = obj["enable"] as? Bool else {return}
+        reloadLoadSplitViewItem(item: menus[1], hidden: value)
     }
     
     @IBAction func onClickSetting(_ sender: NSButton) {
@@ -78,14 +98,60 @@ class MenuController: NSViewController {
             let controllerIdentifier = item.controller,
             let viewController = board.instantiateController(withIdentifier: controllerIdentifier) as? BaseView else { return }
         
+        self.splitVC = splitViewController
+        
         let splititem = NSSplitViewItem(viewController: viewController as NSViewController)
         
         let detailItem = splitViewController.splitViewItems[1]
+        
+        let menuItem = splitViewController.splitViewItems[0]
+        self.menuItem = menuItem
+        
         if let detailViewController = detailItem.viewController as? BaseView {
             detailViewController.viewWillBeRemovedFromSplitView()
         }
         splitViewController.removeSplitViewItem(detailItem)
         splitViewController.addSplitViewItem(splititem)
+        
+    }
+    
+    func reloadLoadSplitViewItem(item: MenuItem, hidden: Bool) {
+        
+        if hidden == false {
+            self.splitVC!.removeSplitViewItem(self.menuItem!)
+        } else {
+            self.splitVC?.insertSplitViewItem(self.menuItem!, at: 0)
+        }
+        
+      //  var storyboardName = ""
+        
+//        if let name = item.storyboard {
+//            storyboardName = name
+//        } else {
+//            storyboardName = "Main"
+//        }
+//        let board: NSStoryboard = NSStoryboard(name: storyboardName, bundle: nil)
+        
+//        guard let splitViewController = self.parent as? NSSplitViewControlle
+//            let controllerIdentifier = item.controller,
+//            let viewController = board.instantiateController(withIdentifier: controllerIdentifier) as? BaseView else { return }
+        
+//        let splititem = NSSplitViewItem(viewController: viewController as NSViewController)
+//
+//        let detailItem = splitViewController.splitViewItems[1]
+//        let menuItem = splitViewController.splitViewItems[0]
+//
+//        if hidden == true {
+//           // splitViewController.removeSplitViewItem(menuItem)
+//           // menuItem.viewController.view.isHidden = true
+//
+//        } else {
+//            splitViewController.toggleSidebar(nil)
+//            //splitViewController.addSplitViewItem(detailItem)
+//           // splitViewController.addSplitViewItem(splititem)
+//        }
+        
+        
     }
 }
 

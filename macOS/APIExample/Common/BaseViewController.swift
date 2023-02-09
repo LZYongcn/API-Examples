@@ -37,6 +37,46 @@ class BaseViewController: NSViewController, BaseView {
 }
 
 extension AGEVideoContainer {
+    func layoutStream(main: NSView, list: [NSView]) {
+        let fullLayout = AGEVideoLayout(level: 0)
+            .startPoint(x: 110, y: 5)
+            .size(.constant(CGSize(width: self.frame.width - 115, height: self.frame.height - 10)))
+        
+        let scrollHeight = self.frame.height - 10
+        main.removeFromSuperview()
+        for view in list {
+            view.removeFromSuperview()
+        }
+        
+        let scrollLayout = AGEVideoLayout(level: 1)
+            .scrollType(.scroll(.vertical))
+            .startPoint(x: 5, y: 5)
+            .size(.constant(CGSize(width: 100, height: scrollHeight)))
+            .lineSpacing(5)
+            .itemSize(.constant(CGSize(width: 100, height: 100)))
+        
+        
+        self.listCount {[list] (level) -> Int in
+            var count = 1
+            if level == 1 {
+                count = list.count
+            } else {
+                
+            }
+            return count
+        }.listItem {[list] (index) -> NSView in
+            if index.level == 0 {
+                return main
+            } else {
+                let view = list[index.item]
+                return view
+            }
+        }
+        
+        self.removeAllLayouts()
+        self.setLayouts([fullLayout, scrollLayout])
+    }
+    
     func layoutStream(views: [NSView]) {
         let count = views.count
         
@@ -66,6 +106,8 @@ extension AGEVideoContainer {
         default:
             return
         }
+        
+        layout = layout.interitemSpacing(5).lineSpacing(5)
         
         self.listCount { (level) -> Int in
             return views.count

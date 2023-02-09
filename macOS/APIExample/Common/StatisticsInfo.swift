@@ -177,12 +177,15 @@ struct StatisticsInfo {
                 results.append("Volume: \(volume)")
             }
             
-            if let videoStats = info.videoStats, let audioStats = info.audioStats {
-                let audioQuality:AgoraNetworkQuality = AgoraNetworkQuality(rawValue: audioStats.quality) ?? .unknown
+            if let videoStats = info.videoStats {
                 results.append("\(Int(videoStats.width))×\(Int(videoStats.height)),\(videoStats.decoderOutputFrameRate)fps")
                 results.append("VRecv: \(videoStats.receivedBitrate)kbps")
-                results.append("ARecv: \(audioStats.receivedBitrate)kbps")
                 results.append("VLoss: \(videoStats.packetLossRate)%")
+            }
+            
+            if let audioStats = info.audioStats {
+                let audioQuality:AgoraNetworkQuality = AgoraNetworkQuality(rawValue: audioStats.quality) ?? .unknown
+                results.append("ARecv: \(audioStats.receivedBitrate)kbps")
                 results.append("ALoss: \(audioStats.audioLossRate)%")
                 results.append("AQuality: \(audioQuality.description())")
             }

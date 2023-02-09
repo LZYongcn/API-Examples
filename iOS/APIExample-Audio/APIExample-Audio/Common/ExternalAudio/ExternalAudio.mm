@@ -235,6 +235,14 @@ public:
     virtual AudioParams getMixedAudioParams() override {
         return AudioParams();
     }
+    
+    virtual AudioParams getEarMonitoringAudioParams() override {
+        return AudioParams();
+    }
+    
+    virtual bool onEarMonitoringAudioFrame(AudioFrame& audioFrame) override {
+        return false;
+    }
 };
 
 static ExternalAudioFrameObserver* s_audioFrameObserver;

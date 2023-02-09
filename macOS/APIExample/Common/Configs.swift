@@ -36,6 +36,7 @@ class Configs {
         Resolution(width: 320, height: 240),
         Resolution(width: 960, height: 540),
         Resolution(width: 960, height: 720),
+        Resolution(width: 1280, height: 720),
         Resolution(width: 1920, height: 1080)
     ]
     static var defaultFpsIdx: Int = 0
